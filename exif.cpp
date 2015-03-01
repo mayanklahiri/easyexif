@@ -75,11 +75,17 @@ namespace {
                          const unsigned num_components, 
                          const unsigned data, 
                          const unsigned base, 
-                         const unsigned len) {
+                         const unsigned len,
+                         bool intel) {
     string value;
-    if (num_components <= 4)
-      value.assign( (const char*)&data, num_components );
-    else {
+    if (num_components <= 4){
+        value.resize(num_components);
+        char j = intel ? 0 : 24;
+        char j_m = intel ? -8 : 8;
+        for(unsigned i=0; i<num_components; ++i, j -= j_m) {
+            value[i] = data >> j & 0xff;
+        }
+    } else {
       if (base+data+num_components <= len)
         value.assign( (const char*)(buf+base+data), num_components );
     }
@@ -120,7 +126,7 @@ namespace {
         result.val_byte = (unsigned char) *(buf + offs + 8);
         break;
       case 2:
-        result.val_string = parseEXIFString(buf, result.length, result.data, base, len);
+        result.val_string = parseEXIFString(buf, result.length, result.data, base, len, alignIntel);
         break;
       case 3:
         result.val_16 = parse16((const unsigned char *) buf + offs + 8, alignIntel);
