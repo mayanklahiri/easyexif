@@ -85,9 +85,12 @@ namespace {
         for(unsigned i=0; i<num_components; ++i, j -= j_m) {
             value[i] = data >> j & 0xff;
         }
+        if (value[num_components - 1] == '\0') {
+          value.resize(num_components - 1);
+        }
     } else {
       if (base+data+num_components <= len)
-        value.assign( (const char*)(buf+base+data), num_components );
+        value.assign( (const char*)(buf+base+data), num_components - 1 );
     }
     return value;
   }
