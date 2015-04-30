@@ -429,6 +429,19 @@ int EXIFInfo::parseFromEXIFSegment(const unsigned char *buf, unsigned len) {
           if (result.format == 3)
             this->FocalLengthIn35mm = result.val_16;
           break;
+        case 0xa432:
+          // TODO: implement this
+          break;
+        case 0xa433:
+          if (result.format == 2) {
+            this->LensInfo.Manufacturer = result.val_string;
+          }
+          break;
+        case 0xa434:
+          if (result.format == 2) {
+            this->LensInfo.Model = result.val_string;
+          }
+          break;
       }
       offs += 12;
     }
@@ -565,4 +578,12 @@ void EXIFInfo::clear() {
   GeoLocation.LonComponents.minutes   = 0;
   GeoLocation.LonComponents.seconds   = 0;
   GeoLocation.LonComponents.direction = 0;
+
+  // LensInfo
+  LensInfo.FocalLengthMax = 0;
+  LensInfo.FocalLengthMin = 0;
+  LensInfo.FStopMax = 0;
+  LensInfo.FStopMin = 0;
+  LensInfo.Manufacturer = "";
+  LensInfo.Model = "";
 }
