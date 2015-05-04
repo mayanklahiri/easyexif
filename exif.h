@@ -132,7 +132,7 @@ class EXIFInfo {
     double FStopMax;                // Max aperture (f-stop)
     double FocalLengthMin;          // Min focal length (mm)
     double FocalLengthMax;          // Max focal length (mm)
-    std::string Manufacturer;       // Lens manufacturer
+    std::string Make;               // Lens manufacturer
     std::string Model;              // Lens model
   } LensInfo;
 

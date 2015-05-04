@@ -434,7 +434,7 @@ int EXIFInfo::parseFromEXIFSegment(const unsigned char *buf, unsigned len) {
           break;
         case 0xa433:
           if (result.format == 2) {
-            this->LensInfo.Manufacturer = result.val_string;
+            this->LensInfo.Make = result.val_string;
           }
           break;
         case 0xa434:
@@ -584,6 +584,6 @@ void EXIFInfo::clear() {
   LensInfo.FocalLengthMin = 0;
   LensInfo.FStopMax = 0;
   LensInfo.FStopMin = 0;
-  LensInfo.Manufacturer = "";
+  LensInfo.Make = "";
   LensInfo.Model = "";
 }
