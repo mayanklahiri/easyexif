@@ -28,13 +28,27 @@
      NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, 
      EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
-#include <stdio.h>
-#include <algorithm>
 #include "exif.h"
+
+#include <algorithm>
+#include <cstdint>
+#include <stdio.h>
+#include <vector>
 
 using std::string;
 
 namespace {
+
+  struct Rational {
+    uint32_t numerator, denominator;
+    operator double() const {
+      if (denominator < 1e-20) {
+        return 0;
+      }
+      return static_cast<double>(numerator) / static_cast<double>(denominator);
+    }
+  };
+
   // IF Entry 
   struct IFEntry {
     // Raw fields
@@ -44,102 +58,180 @@ namespace {
     unsigned length;
     
     // Parsed fields
-    string val_string;
-    unsigned short val_16;
-    unsigned val_32;
-    double val_rational;
-    unsigned char val_byte;
+    std::vector<uint8_t> val_byte;
+    std::string val_string;
+    std::vector<uint16_t> val_short;
+    std::vector<uint32_t> val_long;
+    std::vector<Rational> val_rational;
   };
 
   // Helper functions
-  unsigned int parse32(const unsigned char *buf, bool intel) {
-    if (intel) 
-      return ((unsigned)buf[3]<<24) | 
-             ((unsigned)buf[2]<<16) | 
-             ((unsigned)buf[1]<<8)  | 
-             buf[0];
+  template <typename T, bool alignIntel>
+  T parse(const unsigned char * buf);
 
-    return ((unsigned)buf[0]<<24) | 
-           ((unsigned)buf[1]<<16) | 
-           ((unsigned)buf[2]<<8)  | 
+  template <>
+  uint8_t parse<uint8_t, false>(const unsigned char * buf) {
+    return *buf;
+  }
+
+  template <>
+  uint8_t parse<uint8_t, true>(const unsigned char * buf) {
+    return *buf;
+  }
+
+  template <>
+  uint16_t parse<uint16_t, false>(const unsigned char * buf) {
+    return (static_cast<uint16_t>(buf[0])<<8) | buf[1];
+  }
+
+  template <>
+  uint16_t parse<uint16_t, true>(const unsigned char * buf) {
+    return (static_cast<uint16_t>(buf[1])<<8) | buf[0];
+  }
+
+  template <>
+  uint32_t parse<uint32_t, false>(const unsigned char * buf) {
+    return (static_cast<uint32_t>(buf[0])<<24) |
+           (static_cast<uint32_t>(buf[1])<<16) |
+           (static_cast<uint32_t>(buf[2])<<8)  |
            buf[3];
   }
 
-  unsigned short parse16(const unsigned char *buf, bool intel) {
-    if (intel)
-      return ((unsigned) buf[1]<<8) | buf[0];
-    return ((unsigned) buf[0]<<8) | buf[1]; 
+  template <>
+  uint32_t parse<uint32_t, true>(const unsigned char * buf) {
+    return (static_cast<uint32_t>(buf[3])<<24) |
+           (static_cast<uint32_t>(buf[2])<<16) |
+           (static_cast<uint32_t>(buf[1])<<8)  |
+           buf[0];
   }
 
-  string parseEXIFString(const unsigned char *buf, 
-                         const unsigned num_components, 
-                         const unsigned data, 
-                         const unsigned base, 
-                         const unsigned len,
-                         bool intel) {
-    string value;
-    if (num_components <= 4){
-        value.resize(num_components);
-        char j = intel ? 0 : 24;
-        char j_m = intel ? -8 : 8;
-        for(unsigned i=0; i<num_components; ++i, j -= j_m) {
-            value[i] = data >> j & 0xff;
-        }
-        if (value[num_components - 1] == '\0') {
-          value.resize(num_components - 1);
-        }
+  template <>
+  Rational parse<Rational, true>(const unsigned char * buf) {
+    Rational r;
+    r.numerator   = parse<uint32_t, true>(buf);
+    r.denominator = parse<uint32_t, true>(buf + 4);
+    return r;
+  }
+
+  template <>
+  Rational parse<Rational, false>(const unsigned char * buf) {
+    Rational r;
+    r.numerator   = parse<uint32_t, false>(buf);
+    r.denominator = parse<uint32_t, false>(buf + 4);
+    return r;
+  }
+
+  /**
+   * Try to read entry.length values for this entry.
+   *
+   * Returns:
+   *  true  - entry.length values were read
+   *  false - something went wrong, vec's content was not touched
+   */
+  template <typename T, bool alignIntel, typename C>
+  bool extract_values(C & container,
+                      const unsigned char * buf,
+                      const unsigned base,
+                      const unsigned len,
+                      const IFEntry & entry) {
+    const unsigned char * data;
+    uint32_t reversed_data;
+    // if data fits into 4 bytes, they are stored directly in
+    // the data field in IFEntry
+    if (sizeof(T) * entry.length <= 4) {
+      if (alignIntel) {
+        reversed_data = entry.data;
+      } else {
+        reversed_data = entry.data;
+        // this reversing works, but is ugly 
+        unsigned char * data = reinterpret_cast<unsigned char *>(&reversed_data);
+        unsigned char tmp;
+        tmp = data[0];
+        data[0] = data[3];
+        data[3] = tmp;
+        tmp = data[1];
+        data[1] = data[2];
+        data[2] = tmp;
+      }
+      data = reinterpret_cast<const unsigned char *>(&(reversed_data));
     } else {
-      if (base+data+num_components <= len)
-        value.assign( (const char*)(buf+base+data), num_components - 1 );
+      data = buf + base + entry.data;
+      if (data + sizeof(T) * entry.length > buf + len) {
+        return false;
+      }
     }
-    return value;
+    container.resize(entry.length);
+    for (size_t i = 0; i < entry.length; ++i) {
+      container[i] = parse<T, alignIntel>(data + sizeof(T) * i);
+    }
+    return true;
   }
 
-  double parseEXIFRational(const unsigned char *buf, bool intel) {
-    double numerator   = 0;
-    double denominator = 1;
-
-    numerator  = (double) parse32(buf, intel);
-    denominator= (double) parse32(buf+4, intel);
-    if(denominator < 1e-20)
-      return 0;
-    return numerator/denominator;
-  }
-
-  IFEntry parseIFEntry(const unsigned char *buf, 
-                       const unsigned offs, 
-                       const bool alignIntel, 
-                       const unsigned base, 
-                       const unsigned len) {
-    IFEntry result;
-
+  template <bool alignIntel>
+  void parseIFEntryHeader(const unsigned char * buf,
+                          unsigned short & tag,
+                          unsigned short & format,
+                          unsigned & length,
+                          unsigned & data) {
     // Each directory entry is composed of:
     // 2 bytes: tag number (data field)
     // 2 bytes: data format
     // 4 bytes: number of components
     // 4 bytes: data value or offset to data value
-    result.tag        = parse16(buf + offs, alignIntel);
-    result.format     = parse16(buf + offs + 2, alignIntel);
-    result.length     = parse32(buf + offs + 4, alignIntel);
-    result.data       = parse32(buf + offs + 8, alignIntel);
+    tag    = parse<uint16_t, alignIntel>(buf);
+    format = parse<uint16_t, alignIntel>(buf + 2);
+    length = parse<uint32_t, alignIntel>(buf + 4);
+    data   = parse<uint32_t, alignIntel>(buf + 8);
+  }
+
+
+  template <bool alignIntel>
+  IFEntry parseIFEntry_temp(const unsigned char * buf,
+                       const unsigned offs,
+                       const unsigned base,
+                       const unsigned len) {
+    IFEntry result;
+
+    // check if there even is enough data for IFEntry in the buffer
+    if (buf + offs + 12 > buf + len) {
+      result.tag = 0xFF;
+      return result;
+    }
+
+    parseIFEntryHeader<alignIntel>(buf + offs, result.tag, result.format, result.length, result.data);
 
     // Parse value in specified format
     switch (result.format) {
       case 1:
-        result.val_byte = (unsigned char) *(buf + offs + 8);
+        if (!extract_values<uint8_t, alignIntel>(result.val_byte, buf, base, len, result)) {
+          result.tag = 0xFF;
+        }
         break;
       case 2:
-        result.val_string = parseEXIFString(buf, result.length, result.data, base, len, alignIntel);
+        // string is basically sequence of uint8_t (well, according to EXIF even uint7_t, but
+        // we don't have that), so just read it as bytes
+        if (!extract_values<uint8_t, alignIntel>(result.val_string, buf, base, len, result)) {
+          result.tag = 0xFF;
+        }
+        // and cut zero byte at the end, since we don't want that in the std::string
+        if (result.val_string[result.val_string.length() - 1] == '\0') {
+          result.val_string.resize(result.val_string.length() - 1);
+        }
         break;
       case 3:
-        result.val_16 = parse16((const unsigned char *) buf + offs + 8, alignIntel);
+        if (!extract_values<uint16_t, alignIntel>(result.val_short, buf, base, len, result)) {
+          result.tag = 0xFF;
+        }
         break;
       case 4:
-        result.val_32 = result.data;
+        if (!extract_values<uint32_t, alignIntel>(result.val_long, buf, base, len, result)) {
+          result.tag = 0xFF;
+        }
         break;
       case 5:
-        if (base + result.data + 8 <= len)
-          result.val_rational = parseEXIFRational(buf + base + result.data, alignIntel);
+        if (!extract_values<Rational, alignIntel>(result.val_rational, buf, base, len, result)) {
+          result.tag = 0xFF;
+        }
         break;
       case 7:
       case 9:
@@ -149,6 +241,41 @@ namespace {
         result.tag = 0xFF;
     }
     return result;
+  }
+
+  // helper functions for convinience
+  template <typename T>
+  T parse_value(const unsigned char * buf, bool alignIntel) {
+    if (alignIntel) {
+      return parse<T, true>(buf);
+    } else {
+      return parse<T, false>(buf);
+    }
+  }
+
+  void parseIFEntryHeader(const unsigned char * buf,
+                          bool alignIntel,
+                          unsigned short & tag,
+                          unsigned short & format,
+                          unsigned & length,
+                          unsigned & data) {
+    if (alignIntel) {
+      parseIFEntryHeader<true>(buf, tag, format, length, data);
+    } else {
+      parseIFEntryHeader<false>(buf, tag, format, length, data);
+    }
+  }
+
+  IFEntry parseIFEntry(const unsigned char * buf,
+                       const unsigned offs,
+                       const bool alignIntel,
+                       const unsigned base,
+                       const unsigned len) {
+    if (alignIntel) {
+      return parseIFEntry_temp<true>(buf, offs, base, len);
+    } else {
+      return parseIFEntry_temp<false>(buf, offs, base, len);
+    }
   }
 }
 
@@ -185,7 +312,7 @@ int EXIFInfo::parseFrom(const unsigned char *buf, unsigned len) {
   if (offs + 4 > len)
     return PARSE_EXIF_ERROR_NO_EXIF;
   offs += 2;
-  unsigned short section_length = parse16(buf + offs, false); 
+  unsigned short section_length = parse_value<uint16_t>(buf + offs, false);
   if (offs + section_length > len || section_length < 16)
     return PARSE_EXIF_ERROR_CORRUPT;
   offs += 2;
@@ -237,10 +364,10 @@ int EXIFInfo::parseFromEXIFSegment(const unsigned char *buf, unsigned len) {
   }
   this->ByteAlign = alignIntel;
   offs += 2;
-  if (0x2a != parse16(buf+offs, alignIntel))
+  if (0x2a != parse_value<uint16_t>(buf+offs, alignIntel))
     return PARSE_EXIF_ERROR_CORRUPT;
   offs += 2;
-  unsigned first_ifd_offset = parse32(buf + offs, alignIntel);
+  unsigned first_ifd_offset = parse_value<uint32_t>(buf + offs, alignIntel);
   offs += first_ifd_offset - 4;
   if (offs >= len)
     return PARSE_EXIF_ERROR_CORRUPT;
@@ -253,7 +380,7 @@ int EXIFInfo::parseFromEXIFSegment(const unsigned char *buf, unsigned len) {
   // bytes of data.
   if (offs + 2 > len)
     return PARSE_EXIF_ERROR_CORRUPT;
-  int num_entries = parse16(buf + offs, alignIntel);
+  int num_entries = parse_value<uint16_t>(buf + offs, alignIntel);
   if (offs + 6 + 12 * num_entries > len)
     return PARSE_EXIF_ERROR_CORRUPT;
   offs += 2;
@@ -266,7 +393,7 @@ int EXIFInfo::parseFromEXIFSegment(const unsigned char *buf, unsigned len) {
       case 0x102:
         // Bits per sample
         if (result.format == 3)
-          this->BitsPerSample = result.val_16;
+          this->BitsPerSample = result.val_short.front();
         break;
 
       case 0x10E:
@@ -290,7 +417,7 @@ int EXIFInfo::parseFromEXIFSegment(const unsigned char *buf, unsigned len) {
       case 0x112:
         // Orientation of image
         if (result.format == 3)
-          this->Orientation = result.val_16;
+          this->Orientation = result.val_short.front();
         break;
 
       case 0x131:
@@ -329,7 +456,7 @@ int EXIFInfo::parseFromEXIFSegment(const unsigned char *buf, unsigned len) {
   // typical user might want.
   if (exif_sub_ifd_offset + 4 <= len) {
     offs = exif_sub_ifd_offset;
-    int num_entries = parse16(buf + offs, alignIntel);
+    int num_entries = parse_value<uint16_t>(buf + offs, alignIntel);
     if (offs + 6 + 12 * num_entries > len)
       return PARSE_EXIF_ERROR_CORRUPT;
     offs += 2;
@@ -339,19 +466,19 @@ int EXIFInfo::parseFromEXIFSegment(const unsigned char *buf, unsigned len) {
         case 0x829a:
           // Exposure time in seconds
           if (result.format == 5)
-            this->ExposureTime = result.val_rational;
+            this->ExposureTime = result.val_rational.front();
           break;
 
         case 0x829d:
           // FNumber
           if (result.format == 5)
-            this->FNumber = result.val_rational;
+            this->FNumber = result.val_rational.front();
           break;
 
         case 0x8827:
           // ISO Speed Rating
           if (result.format == 3)
-            this->ISOSpeedRatings = result.val_16;
+            this->ISOSpeedRatings = result.val_short.front();
           break;
 
         case 0x9003:
@@ -369,19 +496,19 @@ int EXIFInfo::parseFromEXIFSegment(const unsigned char *buf, unsigned len) {
         case 0x9201:
           // Shutter speed value
           if (result.format == 5)
-            this->ShutterSpeedValue = result.val_rational;
+            this->ShutterSpeedValue = result.val_rational.front();
           break;
 
         case 0x9204:
           // Exposure bias value 
           if (result.format == 5)
-            this->ExposureBiasValue = result.val_rational;
+            this->ExposureBiasValue = result.val_rational.front();
           break;
 
         case 0x9206:
           // Subject distance
           if (result.format == 5)
-            this->SubjectDistance = result.val_rational;
+            this->SubjectDistance = result.val_rational.front();
           break;
 
         case 0x9209:
@@ -393,13 +520,13 @@ int EXIFInfo::parseFromEXIFSegment(const unsigned char *buf, unsigned len) {
         case 0x920a:
           // Focal length
           if (result.format == 5)
-            this->FocalLength = result.val_rational;
+            this->FocalLength = result.val_rational.front();
           break;
 
         case 0x9207:
           // Metering mode
           if (result.format == 3)
-            this->MeteringMode = result.val_16;
+            this->MeteringMode = result.val_short.front();
           break;
 
         case 0x9291:
@@ -411,26 +538,26 @@ int EXIFInfo::parseFromEXIFSegment(const unsigned char *buf, unsigned len) {
         case 0xa002:
           // EXIF Image width
           if (result.format == 4)
-            this->ImageWidth = result.val_32;
+            this->ImageWidth = result.val_long.front();
           if (result.format == 3)
-            this->ImageWidth = result.val_16;
+            this->ImageWidth = result.val_short.front();
           break;
 
         case 0xa003:
           // EXIF Image height
           if (result.format == 4)
-            this->ImageHeight = result.val_32;
+            this->ImageHeight = result.val_long.front();
           if (result.format == 3)
-            this->ImageHeight = result.val_16;
+            this->ImageHeight = result.val_short.front();
           break;
 
         case 0xa405:
           // Focal length in 35mm film
           if (result.format == 3)
-            this->FocalLengthIn35mm = result.val_16;
+            this->FocalLengthIn35mm = result.val_short.front();
           break;
         case 0xa432:
-          // TODO: implement this
+          // TODO: implement
           break;
         case 0xa433:
           if (result.format == 2) {
@@ -451,15 +578,14 @@ int EXIFInfo::parseFromEXIFSegment(const unsigned char *buf, unsigned len) {
   // there. Note that it's possible that the GPS SubIFD doesn't exist.
   if (gps_sub_ifd_offset + 4 <= len) {
     offs = gps_sub_ifd_offset;
-    int num_entries = parse16(buf + offs, alignIntel);
+    int num_entries = parse_value<uint16_t>(buf + offs, alignIntel);
     if (offs + 6 + 12 * num_entries > len)
       return PARSE_EXIF_ERROR_CORRUPT;
     offs += 2;
     while (--num_entries >= 0) {
-      unsigned short tag    = parse16(buf + offs, alignIntel);
-      unsigned short format = parse16(buf + offs + 2, alignIntel);
-      unsigned length       = parse32(buf + offs + 4, alignIntel);
-      unsigned data         = parse32(buf + offs + 8, alignIntel);
+      unsigned short tag, format;
+      unsigned length, data;
+      parseIFEntryHeader(buf + offs, alignIntel, tag, format, length, data);
       switch(tag) {
         case 1:
           // GPS north or south
@@ -472,11 +598,11 @@ int EXIFInfo::parseFromEXIFSegment(const unsigned char *buf, unsigned len) {
           // GPS latitude
           if (format == 5 && length == 3) {
             this->GeoLocation.LatComponents.degrees = 
-              parseEXIFRational(buf + data + tiff_header_start, alignIntel);
+              parse_value<Rational>(buf + data + tiff_header_start, alignIntel);
             this->GeoLocation.LatComponents.minutes = 
-              parseEXIFRational(buf + data + tiff_header_start + 8, alignIntel);
+              parse_value<Rational>(buf + data + tiff_header_start + 8, alignIntel);
             this->GeoLocation.LatComponents.seconds = 
-              parseEXIFRational(buf + data + tiff_header_start + 16, alignIntel);
+              parse_value<Rational>(buf + data + tiff_header_start + 16, alignIntel);
             this->GeoLocation.Latitude = 
               this->GeoLocation.LatComponents.degrees +
               this->GeoLocation.LatComponents.minutes / 60 +
@@ -497,11 +623,11 @@ int EXIFInfo::parseFromEXIFSegment(const unsigned char *buf, unsigned len) {
           // GPS longitude
           if (format == 5 && length == 3) {
             this->GeoLocation.LonComponents.degrees = 
-              parseEXIFRational(buf + data + tiff_header_start, alignIntel);
+              parse_value<Rational>(buf + data + tiff_header_start, alignIntel);
             this->GeoLocation.LonComponents.minutes = 
-              parseEXIFRational(buf + data + tiff_header_start + 8, alignIntel);
+              parse_value<Rational>(buf + data + tiff_header_start + 8, alignIntel);
             this->GeoLocation.LonComponents.seconds = 
-              parseEXIFRational(buf + data + tiff_header_start + 16, alignIntel);
+              parse_value<Rational>(buf + data + tiff_header_start + 16, alignIntel);
             this->GeoLocation.Longitude = 
               this->GeoLocation.LonComponents.degrees +
               this->GeoLocation.LonComponents.minutes / 60 +
@@ -522,7 +648,7 @@ int EXIFInfo::parseFromEXIFSegment(const unsigned char *buf, unsigned len) {
           // GPS altitude reference
           if (format == 5) {
             this->GeoLocation.Altitude = 
-              parseEXIFRational(buf + data + tiff_header_start, alignIntel);
+              parse_value<Rational>(buf + data + tiff_header_start, alignIntel);
             if (1 == this->GeoLocation.AltitudeRef)
               this->GeoLocation.Altitude = -this->GeoLocation.Altitude;
           }
