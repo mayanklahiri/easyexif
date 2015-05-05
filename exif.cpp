@@ -557,7 +557,12 @@ int EXIFInfo::parseFromEXIFSegment(const unsigned char *buf, unsigned len) {
             this->FocalLengthIn35mm = result.val_short.front();
           break;
         case 0xa432:
-          // TODO: implement
+          if (result.format == 5) {
+            this->LensInfo.FocalLengthMin = result.val_rational[0];
+            this->LensInfo.FocalLengthMax = result.val_rational[1];
+            this->LensInfo.FStopMin = result.val_rational[2];
+            this->LensInfo.FStopMax = result.val_rational[3];
+          }
           break;
         case 0xa433:
           if (result.format == 2) {
