@@ -93,8 +93,19 @@ namespace {
       return format_;
     }
     bool format(unsigned short format) {
-      if (!((format > 0 && format < 6) || (format == 0xff))) {
-        return false;
+      switch (format) {
+        case 0x01:
+        case 0x02:
+        case 0x03:
+        case 0x04:
+        case 0x05:
+        case 0x07:
+        case 0x09:
+        case 0x0a:
+        case 0xff:
+          break;
+        default:
+          return false;
       }
       delete_union();
       format_ = format;
