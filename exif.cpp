@@ -50,19 +50,163 @@ namespace {
   };
 
   // IF Entry 
-  struct IFEntry {
+  class IFEntry {
+  public:
+    using byte_vector = std::vector<uint8_t>;
+    using ascii_vector = std::string;
+    using short_vector = std::vector<uint16_t>;
+    using long_vector = std::vector<uint32_t>;
+    using rational_vector = std::vector<Rational>;
+
+    IFEntry()
+      : tag_(0xFF),
+        format_(0xFF),
+        data_(0),
+        length_(0),
+        val_byte_(nullptr)
+    {}
+    IFEntry(const IFEntry&) =delete;
+    IFEntry & operator=(const IFEntry &) =delete;
+    IFEntry(IFEntry && other)
+      : tag_(other.tag_),
+        format_(other.format_),
+        data_(other.data_),
+        length_(other.length_),
+        val_byte_(other.val_byte_)
+    {
+      other.tag_ = 0xFF;
+      other.format_ = 0xFF;
+      other.data_ = 0;
+      other.length_ = 0;
+      other.val_byte_ = nullptr;
+    }
+    ~IFEntry() {
+      delete_union();
+    }
+    unsigned short tag() const {
+      return tag_;
+    }
+    void tag(unsigned short tag) {
+      tag_ = tag;
+    }
+    unsigned short format() const {
+      return format_;
+    }
+    bool format(unsigned short format) {
+      if (!((format > 0 && format < 6) || (format == 0xff))) {
+        return false;
+      }
+      delete_union();
+      format_ = format;
+      new_union();
+      return true;
+    }
+    unsigned data() const {
+      return data_;
+    }
+    void data(unsigned data) {
+      data_ = data;
+    }
+    unsigned length() const {
+      return length_;
+    }
+    void length(unsigned length) {
+      length_ = length;
+    }
+
+    // functions to access the data
+    //
+    // !! it's CALLER responsibility to check that format !!
+    // !! is correct before accessing it's field          !!
+    //
+    // - getters are use here to allow future addition
+    //   of checks if format is correct
+    byte_vector & val_byte() {
+      return *val_byte_;
+    }
+    ascii_vector & val_string() {
+      return *val_string_;
+    }
+    short_vector & val_short() {
+      return *val_short_;
+    }
+    long_vector & val_long() {
+      return *val_long_;
+    }
+    rational_vector & val_rational() {
+      return *val_rational_;
+    }
+  private:
     // Raw fields
-    unsigned short tag;
-    unsigned short format;
-    unsigned data;
-    unsigned length;
+    unsigned short tag_;
+    unsigned short format_;
+    unsigned data_;
+    unsigned length_;
     
     // Parsed fields
-    std::vector<uint8_t> val_byte;
-    std::string val_string;
-    std::vector<uint16_t> val_short;
-    std::vector<uint32_t> val_long;
-    std::vector<Rational> val_rational;
+    union {
+      byte_vector * val_byte_;
+      ascii_vector * val_string_;
+      short_vector * val_short_;
+      long_vector * val_long_;
+      rational_vector * val_rational_;
+    };
+
+    void delete_union() {
+      switch (format_) {
+        case 0x1:
+          delete val_byte_;
+          val_byte_ = nullptr;
+          break;
+        case 0x2:
+          delete val_string_;
+          val_string_ = nullptr;
+          break;
+        case 0x3:
+          delete val_short_;
+          val_short_ = nullptr;
+          break;
+        case 0x4:
+          delete val_long_;
+          val_long_ = nullptr;
+          break;
+        case 0x5:
+          delete val_rational_;
+          val_rational_ = nullptr;
+          break;
+        case 0xff:
+          break;
+        default:
+          // should not get here
+          // should I throw an exception or ...?
+          break;
+      }
+    }
+    void new_union() {
+      switch (format_) {
+        case 0x1:
+          val_byte_ = new byte_vector();
+          break;
+        case 0x2:
+          val_string_ = new ascii_vector();
+          break;
+        case 0x3:
+          val_short_ = new short_vector();
+          break;
+        case 0x4:
+          val_long_ = new long_vector();
+          break;
+        case 0x5:
+          val_rational_ = new rational_vector();
+          break;
+        case 0xff:
+          break;
+        default:
+          // should not get here
+          // should I throw an exception or ...?
+          break;
+      }
+    }
   };
 
   // Helper functions
@@ -122,10 +266,10 @@ namespace {
   }
 
   /**
-   * Try to read entry.length values for this entry.
+   * Try to read entry.length() values for this entry.
    *
    * Returns:
-   *  true  - entry.length values were read
+   *  true  - entry.length() values were read
    *  false - something went wrong, vec's content was not touched
    */
   template <typename T, bool alignIntel, typename C>
@@ -138,11 +282,11 @@ namespace {
     uint32_t reversed_data;
     // if data fits into 4 bytes, they are stored directly in
     // the data field in IFEntry
-    if (sizeof(T) * entry.length <= 4) {
+    if (sizeof(T) * entry.length() <= 4) {
       if (alignIntel) {
-        reversed_data = entry.data;
+        reversed_data = entry.data();
       } else {
-        reversed_data = entry.data;
+        reversed_data = entry.data();
         // this reversing works, but is ugly 
         unsigned char * data = reinterpret_cast<unsigned char *>(&reversed_data);
         unsigned char tmp;
@@ -155,13 +299,13 @@ namespace {
       }
       data = reinterpret_cast<const unsigned char *>(&(reversed_data));
     } else {
-      data = buf + base + entry.data;
-      if (data + sizeof(T) * entry.length > buf + len) {
+      data = buf + base + entry.data();
+      if (data + sizeof(T) * entry.length() > buf + len) {
         return false;
       }
     }
-    container.resize(entry.length);
-    for (size_t i = 0; i < entry.length; ++i) {
+    container.resize(entry.length());
+    for (size_t i = 0; i < entry.length(); ++i) {
       container[i] = parse<T, alignIntel>(data + sizeof(T) * i);
     }
     return true;
@@ -184,6 +328,21 @@ namespace {
     data   = parse<uint32_t, alignIntel>(buf + 8);
   }
 
+  template <bool alignIntel>
+  void parseIFEntryHeader(const unsigned char * buf,
+                          IFEntry & result) {
+    unsigned short tag;
+    unsigned short format;
+    unsigned length;
+    unsigned data;
+
+    parseIFEntryHeader<alignIntel>(buf, tag, format, length, data);
+
+    result.tag(tag);
+    result.format(format);
+    result.length(length);
+    result.data(data);
+  }
 
   template <bool alignIntel>
   IFEntry parseIFEntry_temp(const unsigned char * buf,
@@ -194,43 +353,43 @@ namespace {
 
     // check if there even is enough data for IFEntry in the buffer
     if (buf + offs + 12 > buf + len) {
-      result.tag = 0xFF;
+      result.tag(0xFF);
       return result;
     }
 
-    parseIFEntryHeader<alignIntel>(buf + offs, result.tag, result.format, result.length, result.data);
+    parseIFEntryHeader<alignIntel>(buf + offs, result);
 
     // Parse value in specified format
-    switch (result.format) {
+    switch (result.format()) {
       case 1:
-        if (!extract_values<uint8_t, alignIntel>(result.val_byte, buf, base, len, result)) {
-          result.tag = 0xFF;
+        if (!extract_values<uint8_t, alignIntel>(result.val_byte(), buf, base, len, result)) {
+          result.tag(0xFF);
         }
         break;
       case 2:
         // string is basically sequence of uint8_t (well, according to EXIF even uint7_t, but
         // we don't have that), so just read it as bytes
-        if (!extract_values<uint8_t, alignIntel>(result.val_string, buf, base, len, result)) {
-          result.tag = 0xFF;
+        if (!extract_values<uint8_t, alignIntel>(result.val_string(), buf, base, len, result)) {
+          result.tag(0xFF);
         }
         // and cut zero byte at the end, since we don't want that in the std::string
-        if (result.val_string[result.val_string.length() - 1] == '\0') {
-          result.val_string.resize(result.val_string.length() - 1);
+        if (result.val_string()[result.val_string().length() - 1] == '\0') {
+          result.val_string().resize(result.val_string().length() - 1);
         }
         break;
       case 3:
-        if (!extract_values<uint16_t, alignIntel>(result.val_short, buf, base, len, result)) {
-          result.tag = 0xFF;
+        if (!extract_values<uint16_t, alignIntel>(result.val_short(), buf, base, len, result)) {
+          result.tag(0xFF);
         }
         break;
       case 4:
-        if (!extract_values<uint32_t, alignIntel>(result.val_long, buf, base, len, result)) {
-          result.tag = 0xFF;
+        if (!extract_values<uint32_t, alignIntel>(result.val_long(), buf, base, len, result)) {
+          result.tag(0xFF);
         }
         break;
       case 5:
-        if (!extract_values<Rational, alignIntel>(result.val_rational, buf, base, len, result)) {
-          result.tag = 0xFF;
+        if (!extract_values<Rational, alignIntel>(result.val_rational(), buf, base, len, result)) {
+          result.tag(0xFF);
         }
         break;
       case 7:
@@ -238,7 +397,7 @@ namespace {
       case 10:
         break;
       default:
-        result.tag = 0xFF;
+        result.tag(0xFF);
     }
     return result;
   }
@@ -272,9 +431,9 @@ namespace {
                        const unsigned base,
                        const unsigned len) {
     if (alignIntel) {
-      return parseIFEntry_temp<true>(buf, offs, base, len);
+      return std::move(parseIFEntry_temp<true>(buf, offs, base, len));
     } else {
-      return parseIFEntry_temp<false>(buf, offs, base, len);
+      return std::move(parseIFEntry_temp<false>(buf, offs, base, len));
     }
   }
 }
@@ -389,63 +548,63 @@ int EXIFInfo::parseFromEXIFSegment(const unsigned char *buf, unsigned len) {
   while (--num_entries >= 0) {
     IFEntry result = parseIFEntry(buf, offs, alignIntel, tiff_header_start, len);
     offs += 12;
-    switch(result.tag) {
+    switch(result.tag()) {
       case 0x102:
         // Bits per sample
-        if (result.format == 3)
-          this->BitsPerSample = result.val_short.front();
+        if (result.format() == 3)
+          this->BitsPerSample = result.val_short().front();
         break;
 
       case 0x10E:
         // Image description
-        if (result.format == 2)
-          this->ImageDescription = result.val_string;
+        if (result.format() == 2)
+          this->ImageDescription = result.val_string();
         break;
 
       case 0x10F:
         // Digicam make
-        if (result.format == 2)
-          this->Make = result.val_string;
+        if (result.format() == 2)
+          this->Make = result.val_string();
         break;
 
       case 0x110:
         // Digicam model
-        if (result.format == 2)
-          this->Model = result.val_string;
+        if (result.format() == 2)
+          this->Model = result.val_string();
         break;
 
       case 0x112:
         // Orientation of image
-        if (result.format == 3)
-          this->Orientation = result.val_short.front();
+        if (result.format() == 3)
+          this->Orientation = result.val_short().front();
         break;
 
       case 0x131:
         // Software used for image
-        if (result.format == 2)
-          this->Software = result.val_string;
+        if (result.format() == 2)
+          this->Software = result.val_string();
         break;
 
       case 0x132:
         // EXIF/TIFF date/time of image modification
-        if (result.format == 2)
-          this->DateTime = result.val_string;
+        if (result.format() == 2)
+          this->DateTime = result.val_string();
         break;
 
       case 0x8298:
         // Copyright information
-        if (result.format == 2)
-          this->Copyright = result.val_string;
+        if (result.format() == 2)
+          this->Copyright = result.val_string();
         break;
 
       case 0x8825:
         // GPS IFS offset
-        gps_sub_ifd_offset = tiff_header_start + result.data;
+        gps_sub_ifd_offset = tiff_header_start + result.data();
         break;
 
       case 0x8769:
         // EXIF SubIFD offset
-        exif_sub_ifd_offset = tiff_header_start + result.data;
+        exif_sub_ifd_offset = tiff_header_start + result.data();
         break;
     }
   }
@@ -462,116 +621,116 @@ int EXIFInfo::parseFromEXIFSegment(const unsigned char *buf, unsigned len) {
     offs += 2;
     while (--num_entries >= 0) {
       IFEntry result = parseIFEntry(buf, offs, alignIntel, tiff_header_start, len);
-      switch(result.tag) {
+      switch(result.tag()) {
         case 0x829a:
           // Exposure time in seconds
-          if (result.format == 5)
-            this->ExposureTime = result.val_rational.front();
+          if (result.format() == 5)
+            this->ExposureTime = result.val_rational().front();
           break;
 
         case 0x829d:
           // FNumber
-          if (result.format == 5)
-            this->FNumber = result.val_rational.front();
+          if (result.format() == 5)
+            this->FNumber = result.val_rational().front();
           break;
 
         case 0x8827:
           // ISO Speed Rating
-          if (result.format == 3)
-            this->ISOSpeedRatings = result.val_short.front();
+          if (result.format() == 3)
+            this->ISOSpeedRatings = result.val_short().front();
           break;
 
         case 0x9003:
           // Original date and time
-          if (result.format == 2)
-            this->DateTimeOriginal = result.val_string;
+          if (result.format() == 2)
+            this->DateTimeOriginal = result.val_string();
           break;
 
         case 0x9004:
           // Digitization date and time
-          if (result.format == 2)
-            this->DateTimeDigitized = result.val_string;
+          if (result.format() == 2)
+            this->DateTimeDigitized = result.val_string();
           break;
 
         case 0x9201:
           // Shutter speed value
-          if (result.format == 5)
-            this->ShutterSpeedValue = result.val_rational.front();
+          if (result.format() == 5)
+            this->ShutterSpeedValue = result.val_rational().front();
           break;
 
         case 0x9204:
           // Exposure bias value 
-          if (result.format == 5)
-            this->ExposureBiasValue = result.val_rational.front();
+          if (result.format() == 5)
+            this->ExposureBiasValue = result.val_rational().front();
           break;
 
         case 0x9206:
           // Subject distance
-          if (result.format == 5)
-            this->SubjectDistance = result.val_rational.front();
+          if (result.format() == 5)
+            this->SubjectDistance = result.val_rational().front();
           break;
 
         case 0x9209:
           // Flash used
-          if (result.format == 3)
-            this->Flash = result.data ? 1 : 0;
+          if (result.format() == 3)
+            this->Flash = result.data() ? 1 : 0;
           break;
 
         case 0x920a:
           // Focal length
-          if (result.format == 5)
-            this->FocalLength = result.val_rational.front();
+          if (result.format() == 5)
+            this->FocalLength = result.val_rational().front();
           break;
 
         case 0x9207:
           // Metering mode
-          if (result.format == 3)
-            this->MeteringMode = result.val_short.front();
+          if (result.format() == 3)
+            this->MeteringMode = result.val_short().front();
           break;
 
         case 0x9291:
           // Subsecond original time
-          if (result.format == 2)
-            this->SubSecTimeOriginal = result.val_string;
+          if (result.format() == 2)
+            this->SubSecTimeOriginal = result.val_string();
           break;
 
         case 0xa002:
           // EXIF Image width
-          if (result.format == 4)
-            this->ImageWidth = result.val_long.front();
-          if (result.format == 3)
-            this->ImageWidth = result.val_short.front();
+          if (result.format() == 4)
+            this->ImageWidth = result.val_long().front();
+          if (result.format() == 3)
+            this->ImageWidth = result.val_short().front();
           break;
 
         case 0xa003:
           // EXIF Image height
-          if (result.format == 4)
-            this->ImageHeight = result.val_long.front();
-          if (result.format == 3)
-            this->ImageHeight = result.val_short.front();
+          if (result.format() == 4)
+            this->ImageHeight = result.val_long().front();
+          if (result.format() == 3)
+            this->ImageHeight = result.val_short().front();
           break;
 
         case 0xa405:
           // Focal length in 35mm film
-          if (result.format == 3)
-            this->FocalLengthIn35mm = result.val_short.front();
+          if (result.format() == 3)
+            this->FocalLengthIn35mm = result.val_short().front();
           break;
         case 0xa432:
-          if (result.format == 5) {
-            this->LensInfo.FocalLengthMin = result.val_rational[0];
-            this->LensInfo.FocalLengthMax = result.val_rational[1];
-            this->LensInfo.FStopMin = result.val_rational[2];
-            this->LensInfo.FStopMax = result.val_rational[3];
+          if (result.format() == 5) {
+            this->LensInfo.FocalLengthMin = result.val_rational()[0];
+            this->LensInfo.FocalLengthMax = result.val_rational()[1];
+            this->LensInfo.FStopMin = result.val_rational()[2];
+            this->LensInfo.FStopMax = result.val_rational()[3];
           }
           break;
         case 0xa433:
-          if (result.format == 2) {
-            this->LensInfo.Make = result.val_string;
+          if (result.format() == 2) {
+            this->LensInfo.Make = result.val_string();
           }
           break;
         case 0xa434:
-          if (result.format == 2) {
-            this->LensInfo.Model = result.val_string;
+          if (result.format() == 2) {
+            this->LensInfo.Model = result.val_string();
           }
           break;
       }
