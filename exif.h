@@ -121,12 +121,22 @@ class EXIFInfo {
     double Altitude;                  // Altitude in meters, relative to sea level
     char AltitudeRef;                 // 0 = above sea level, -1 = below sea level
     struct Coord_t {
-      double degrees;               
+      double degrees;
       double minutes;
       double seconds;
       char direction;
     } LatComponents, LonComponents;   // Latitude, Longitude expressed in deg/min/sec 
   } GeoLocation;
+  struct LensInfo_t {               // Lens information
+    double FStopMin;                // Min aperture (f-stop)
+    double FStopMax;                // Max aperture (f-stop)
+    double FocalLengthMin;          // Min focal length (mm)
+    double FocalLengthMax;          // Max focal length (mm)
+    std::string Make;               // Lens manufacturer
+    std::string Model;              // Lens model
+  } LensInfo;
+
+
   EXIFInfo() {
     clear();
   }
