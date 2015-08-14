@@ -452,7 +452,7 @@ namespace {
 //
 // Locates the EXIF segment and parses it using parseFromEXIFSegment 
 //
-int EXIFInfo::parseFrom(const unsigned char *buf, unsigned len) {
+int easyexif::EXIFInfo::parseFrom(const unsigned char *buf, unsigned len) {
   // Sanity check: all JPEG files start with 0xFFD8 and end with 0xFFD9
   // This check also ensures that the user has supplied a correct value for len.
   if (!buf || len < 4)
@@ -490,7 +490,7 @@ int EXIFInfo::parseFrom(const unsigned char *buf, unsigned len) {
   return parseFromEXIFSegment(buf + offs, len - offs);
 }
 
-int EXIFInfo::parseFrom(const string &data) {
+int easyexif::EXIFInfo::parseFrom(const string &data) {
   return parseFrom((const unsigned char *)data.data(), data.length());
 }
 
@@ -500,7 +500,7 @@ int EXIFInfo::parseFrom(const string &data) {
 // PARAM: 'buf' start of the EXIF TIFF, which must be the bytes "Exif\0\0".
 // PARAM: 'len' length of buffer
 //
-int EXIFInfo::parseFromEXIFSegment(const unsigned char *buf, unsigned len) {
+int easyexif::EXIFInfo::parseFromEXIFSegment(const unsigned char *buf, unsigned len) {
   bool alignIntel = true;     // byte alignment (defined in EXIF header)
   unsigned offs   = 0;        // current offset into buffer
   if (!buf || len < 6)
@@ -836,7 +836,7 @@ int EXIFInfo::parseFromEXIFSegment(const unsigned char *buf, unsigned len) {
   return PARSE_EXIF_SUCCESS;
 }
 
-void EXIFInfo::clear() {
+void easyexif::EXIFInfo::clear() {
   // Strings
   ImageDescription  = "";
   Make              = "";
