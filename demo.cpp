@@ -25,7 +25,7 @@ int main(int argc, char *argv[]) {
   fclose(fp);
 
   // Parse EXIF
-  EXIFInfo result;
+  easyexif::EXIFInfo result;
   int code = result.parseFrom(buf, fsize);
   delete[] buf;
   if (code) {

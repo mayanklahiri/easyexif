@@ -57,6 +57,8 @@
 
 #include <string>
 
+namespace easyexif {
+
 // 
 // Class responsible for storing and parsing EXIF information from a JPEG blob
 //
@@ -141,6 +143,8 @@ class EXIFInfo {
     clear();
   }
 };
+
+}
 
 // Parse was successful
 #define PARSE_EXIF_SUCCESS                    0
