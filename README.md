@@ -3,11 +3,13 @@ easyexif
 
 A tiny ISO-compliant C++ EXIF parsing library.
 
-EasyEXIF is a tiny, lightweight C++ library that parses basic information out of EXIF files. It uses only the std::string library and is otherwise pure C++. You pass it the the binary contents of an entire JPEG file, and it parses out a few of the most important EXIF fields for you.
+EasyEXIF is a tiny, lightweight C++ library that parses basic information out of EXIF files. It uses only the std::string library and is otherwise pure C++. You pass it the binary contents of a JPEG file, and it parses out a few of the most important EXIF fields for you.
 
 Why use this library? __Include one .h file, compile one .cc file, and that's it.__
 
 Sometimes you just need to quickly extract basic information from a JPEG file's EXIF headers: the time the image was taken (not the file timestamp, the camera's internal time), the F-stop or exposure time, GPS information embedded in the EXIF file, what the camera make and model was, etc. Unfortunately, all the EXIF libraries out there are not very lightweight or easy to integrate into larger programs. EasyEXIF aims to solve that problem, and is released under a very liberal BSD License for use practically anywhere.
+
+The only two files you need for your project are `exif.cpp` and `exif.h`. There are no dependencies on any build system or external libraries.
 
 ### Features:
 
@@ -20,11 +22,17 @@ Sometimes you just need to quickly extract basic information from a JPEG file's 
 
 ### License
 
-BSD.
+BSD. Free for personal and commercial use.
 
 ### Contributions
 
-Reasonable pull requests are gladly accepted.
+Reasonable pull requests are gladly accepted. Please ensure that you have run the following steps before submitting a patch:
+
+  1. `clang-format` the source files, using the default style (Google).
+  2. Run `test.sh` to make sure test images are being parsed correctly.
+  3. Compile and run `demo` using `valgrind --leak-check=full` to ensure that there are no memory leaks.
+  4. Add yourself to the contributors list in `CONTRIBUTORS` and `README.md`.
+  5. For misbehaving images, please try to include a test image that misbehaves in the `test-images` folder.
 
 The following people have committed patches to EasyExif.
 
@@ -40,6 +48,7 @@ The following people have committed patches to EasyExif.
 
 ### Example:
 
+See `demo.cpp` for other Exif fields.
 
 ```C++
   #include "exif.h"
