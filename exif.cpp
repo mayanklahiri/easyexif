@@ -682,12 +682,28 @@ int easyexif::EXIFInfo::parseFromEXIFSegment(const unsigned char *buf,
             this->ImageHeight = result.val_short().front();
           break;
 
+        case 0xa20e:
+          // EXIF Focal plane X-resolution
+          if (result.format() == 5) {
+            this->LensInfo.FocalPlaneXResolution = result.val_rational()[0];
+          }
+          break;
+
+        case 0xa20f:
+          // EXIF Focal plane Y-resolution
+          if (result.format() == 5) {
+            this->LensInfo.FocalPlaneYResolution = result.val_rational()[0];
+          }
+          break;
+
         case 0xa405:
           // Focal length in 35mm film
           if (result.format() == 3)
             this->FocalLengthIn35mm = result.val_short().front();
           break;
+
         case 0xa432:
+          // Focal length and FStop.
           if (result.format() == 5) {
             this->LensInfo.FocalLengthMin = result.val_rational()[0];
             this->LensInfo.FocalLengthMax = result.val_rational()[1];
@@ -695,12 +711,16 @@ int easyexif::EXIFInfo::parseFromEXIFSegment(const unsigned char *buf,
             this->LensInfo.FStopMax = result.val_rational()[3];
           }
           break;
+
         case 0xa433:
+          // Lens make.
           if (result.format() == 2) {
             this->LensInfo.Make = result.val_string();
           }
           break;
+
         case 0xa434:
+          // Lens model.
           if (result.format() == 2) {
             this->LensInfo.Model = result.val_string();
           }
@@ -784,18 +804,27 @@ int easyexif::EXIFInfo::parseFromEXIFSegment(const unsigned char *buf,
         case 5:
           // GPS altitude reference (below or above sea level)
           this->GeoLocation.AltitudeRef = *(buf + offs + 8);
-          if (1 == this->GeoLocation.AltitudeRef)
+          if (1 == this->GeoLocation.AltitudeRef) {
             this->GeoLocation.Altitude = -this->GeoLocation.Altitude;
+          }
           break;
 
         case 6:
-          // GPS altitude reference
+          // GPS altitude
           if (format == 5) {
             this->GeoLocation.Altitude = parse_value<Rational>(
                 buf + data + tiff_header_start, alignIntel);
             if (1 == this->GeoLocation.AltitudeRef) {
               this->GeoLocation.Altitude = -this->GeoLocation.Altitude;
             }
+          }
+          break;
+
+        case 11:
+          // GPS degree of precision (DOP)
+          if (format == 5) {
+            this->GeoLocation.DOP = parse_value<Rational>(
+                buf + data + tiff_header_start, alignIntel);
           }
           break;
       }
@@ -841,6 +870,7 @@ void easyexif::EXIFInfo::clear() {
   GeoLocation.Longitude = 0;
   GeoLocation.Altitude = 0;
   GeoLocation.AltitudeRef = 0;
+  GeoLocation.DOP = 0;
   GeoLocation.LatComponents.degrees = 0;
   GeoLocation.LatComponents.minutes = 0;
   GeoLocation.LatComponents.seconds = 0;
@@ -855,6 +885,8 @@ void easyexif::EXIFInfo::clear() {
   LensInfo.FocalLengthMin = 0;
   LensInfo.FStopMax = 0;
   LensInfo.FStopMin = 0;
+  LensInfo.FocalPlaneYResolution = 0;
+  LensInfo.FocalPlaneXResolution = 0;
   LensInfo.Make = "";
   LensInfo.Model = "";
 }

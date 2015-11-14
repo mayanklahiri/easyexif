@@ -68,12 +68,15 @@ int main(int argc, char *argv[]) {
          result.GeoLocation.LonComponents.seconds,
          result.GeoLocation.LonComponents.direction);
   printf("GPS Altitude         : %f m\n", result.GeoLocation.Altitude);
+  printf("GPS Precision (DOP)  : %f\n", result.GeoLocation.DOP);
   printf("Lens min focal length: %f mm\n", result.LensInfo.FocalLengthMin);
   printf("Lens max focal length: %f mm\n", result.LensInfo.FocalLengthMax);
   printf("Lens f-stop min      : f/%.1f\n", result.LensInfo.FStopMin);
   printf("Lens f-stop max      : f/%.1f\n", result.LensInfo.FStopMax);
   printf("Lens make            : %s\n", result.LensInfo.Make.c_str());
   printf("Lens model           : %s\n", result.LensInfo.Model.c_str());
+  printf("Focal plane XRes     : %f\n", result.LensInfo.FocalPlaneXResolution);
+  printf("Focal plane YRes     : %f\n", result.LensInfo.FocalPlaneYResolution);
 
   return 0;
 }

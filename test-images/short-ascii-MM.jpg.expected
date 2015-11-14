@@ -23,9 +23,12 @@ Lens focal length    : 21.300000 mm
 GPS Latitude         : 0.000000 deg (0.000000 deg, 0.000000 min, 0.000000 sec ?)
 GPS Longitude        : 0.000000 deg (0.000000 deg, 0.000000 min, 0.000000 sec ?)
 GPS Altitude         : 0.000000 m
+GPS Precision (DOP)  : 0.000000
 Lens min focal length: 0.000000 mm
 Lens max focal length: 0.000000 mm
 Lens f-stop min      : f/0.0
 Lens f-stop max      : f/0.0
 Lens make            : 
 Lens model           : 
+Focal plane XRes     : 8114.285714
+Focal plane YRes     : 8114.285714
