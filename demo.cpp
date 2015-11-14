@@ -9,9 +9,9 @@ int main(int argc, char *argv[]) {
 
   // Read the JPEG file into a buffer
   FILE *fp = fopen(argv[1], "rb");
-  if (!fp) { 
-    printf("Can't open file.\n"); 
-    return -1; 
+  if (!fp) {
+    printf("Can't open file.\n");
+    return -1;
   }
   fseek(fp, 0, SEEK_END);
   unsigned long fsize = ftell(fp);

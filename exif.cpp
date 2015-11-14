@@ -1,5 +1,5 @@
 /**************************************************************************
-  exif.cpp  -- A simple ISO C++ library to parse basic EXIF 
+  exif.cpp  -- A simple ISO C++ library to parse basic EXIF
                information from a JPEG file.
 
   Copyright (c) 2010-2015 Mayank Lahiri
@@ -8,24 +8,24 @@
 
   See exif.h for version history.
 
-  Redistribution and use in source and binary forms, with or without 
+  Redistribution and use in source and binary forms, with or without
   modification, are permitted provided that the following conditions are met:
 
-  -- Redistributions of source code must retain the above copyright notice, 
+  -- Redistributions of source code must retain the above copyright notice,
      this list of conditions and the following disclaimer.
-  -- Redistributions in binary form must reproduce the above copyright notice, 
-     this list of conditions and the following disclaimer in the documentation 
+  -- Redistributions in binary form must reproduce the above copyright notice,
+     this list of conditions and the following disclaimer in the documentation
      and/or other materials provided with the distribution.
 
-     THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS ``AS IS'' AND ANY EXPRESS 
-     OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES 
-     OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN 
-     NO EVENT SHALL THE FREEBSD PROJECT OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, 
-     INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, 
-     BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, 
-     DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY 
-     OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING 
-     NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, 
+     THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS ``AS IS'' AND ANY EXPRESS
+     OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
+     OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN
+     NO EVENT SHALL THE FREEBSD PROJECT OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT,
+     INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+     BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+     DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY
+     OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+     NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
      EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 #include "exif.h"
@@ -49,7 +49,7 @@ namespace {
     }
   };
 
-  // IF Entry 
+  // IF Entry
   class IFEntry {
   public:
     using byte_vector = std::vector<uint8_t>;
@@ -153,7 +153,7 @@ namespace {
     unsigned short format_;
     unsigned data_;
     unsigned length_;
-    
+
     // Parsed fields
     union {
       byte_vector * val_byte_;
@@ -298,7 +298,7 @@ namespace {
         reversed_data = entry.data();
       } else {
         reversed_data = entry.data();
-        // this reversing works, but is ugly 
+        // this reversing works, but is ugly
         unsigned char * data = reinterpret_cast<unsigned char *>(&reversed_data);
         unsigned char tmp;
         tmp = data[0];
@@ -450,7 +450,7 @@ namespace {
 }
 
 //
-// Locates the EXIF segment and parses it using parseFromEXIFSegment 
+// Locates the EXIF segment and parses it using parseFromEXIFSegment
 //
 int easyexif::EXIFInfo::parseFrom(const unsigned char *buf, unsigned len) {
   // Sanity check: all JPEG files start with 0xFFD8 and end with 0xFFD9
@@ -463,7 +463,7 @@ int easyexif::EXIFInfo::parseFrom(const unsigned char *buf, unsigned len) {
     return PARSE_EXIF_ERROR_NO_JPEG;
   clear();
 
-  // Scan for EXIF header (bytes 0xFF 0xE1) and do a sanity check by 
+  // Scan for EXIF header (bytes 0xFF 0xE1) and do a sanity check by
   // looking for bytes "Exif\0\0". The marker length data is in Motorola
   // byte order, which results in the 'false' parameter to parse16().
   // The marker has to contain at least the TIFF header, otherwise the
@@ -476,8 +476,8 @@ int easyexif::EXIFInfo::parseFrom(const unsigned char *buf, unsigned len) {
   // =========
   //  16 bytes
   unsigned offs = 0;        // current offset into buffer
-  for (offs = 0; offs < len-1; offs++) 
-    if (buf[offs] == 0xFF && buf[offs+1] == 0xE1) 
+  for (offs = 0; offs < len-1; offs++)
+    if (buf[offs] == 0xFF && buf[offs+1] == 0xE1)
       break;
   if (offs + 4 > len)
     return PARSE_EXIF_ERROR_NO_EXIF;
@@ -509,11 +509,11 @@ int easyexif::EXIFInfo::parseFromEXIFSegment(const unsigned char *buf, unsigned 
   if (!std::equal(buf, buf+6, "Exif\0\0"))
     return PARSE_EXIF_ERROR_NO_EXIF;
   offs += 6;
-  
+
   // Now parsing the TIFF header. The first two bytes are either "II" or
   // "MM" for Intel or Motorola byte alignment. Sanity check by parsing
   // the unsigned short that follows, making sure it equals 0x2a. The
-  // last 4 bytes are an offset into the first IFD, which are added to 
+  // last 4 bytes are an offset into the first IFD, which are added to
   // the global offset counter. For this block, we expect the following
   // minimum size:
   //  2 bytes: 'II' or 'MM'
@@ -529,7 +529,7 @@ int easyexif::EXIFInfo::parseFromEXIFSegment(const unsigned char *buf, unsigned 
   else {
     if(buf[offs] == 'M' && buf[offs+1] == 'M')
       alignIntel = false;
-    else 
+    else
       return PARSE_EXIF_ERROR_UNKNOWN_BYTEALIGN;
   }
   this->ByteAlign = alignIntel;
@@ -670,7 +670,7 @@ int easyexif::EXIFInfo::parseFromEXIFSegment(const unsigned char *buf, unsigned 
           break;
 
         case 0x9204:
-          // Exposure bias value 
+          // Exposure bias value
           if (result.format() == 5)
             this->ExposureBiasValue = result.val_rational().front();
           break;
@@ -765,45 +765,54 @@ int easyexif::EXIFInfo::parseFromEXIFSegment(const unsigned char *buf, unsigned 
         case 1:
           // GPS north or south
           this->GeoLocation.LatComponents.direction = *(buf + offs + 8);
-          if ('S' == this->GeoLocation.LatComponents.direction)
+          if (this->GeoLocation.LatComponents.direction == 0) {
+            this->GeoLocation.LatComponents.direction = '?';
+          }
+          if ('S' == this->GeoLocation.LatComponents.direction) {
             this->GeoLocation.Latitude = -this->GeoLocation.Latitude;
+          }
           break;
 
         case 2:
           // GPS latitude
           if (format == 5 && length == 3) {
-            this->GeoLocation.LatComponents.degrees = 
+            this->GeoLocation.LatComponents.degrees =
               parse_value<Rational>(buf + data + tiff_header_start, alignIntel);
-            this->GeoLocation.LatComponents.minutes = 
+            this->GeoLocation.LatComponents.minutes =
               parse_value<Rational>(buf + data + tiff_header_start + 8, alignIntel);
-            this->GeoLocation.LatComponents.seconds = 
+            this->GeoLocation.LatComponents.seconds =
               parse_value<Rational>(buf + data + tiff_header_start + 16, alignIntel);
-            this->GeoLocation.Latitude = 
+            this->GeoLocation.Latitude =
               this->GeoLocation.LatComponents.degrees +
               this->GeoLocation.LatComponents.minutes / 60 +
               this->GeoLocation.LatComponents.seconds / 3600;
-            if ('S' == this->GeoLocation.LatComponents.direction)
+            if ('S' == this->GeoLocation.LatComponents.direction) {
               this->GeoLocation.Latitude = -this->GeoLocation.Latitude;
+            }
           }
           break;
 
         case 3:
           // GPS east or west
           this->GeoLocation.LonComponents.direction = *(buf + offs + 8);
-          if ('W' == this->GeoLocation.LonComponents.direction)
+          if (this->GeoLocation.LonComponents.direction == 0) {
+            this->GeoLocation.LonComponents.direction = '?';
+          }
+          if ('W' == this->GeoLocation.LonComponents.direction) {
             this->GeoLocation.Longitude = -this->GeoLocation.Longitude;
+          }
           break;
 
         case 4:
           // GPS longitude
           if (format == 5 && length == 3) {
-            this->GeoLocation.LonComponents.degrees = 
+            this->GeoLocation.LonComponents.degrees =
               parse_value<Rational>(buf + data + tiff_header_start, alignIntel);
-            this->GeoLocation.LonComponents.minutes = 
+            this->GeoLocation.LonComponents.minutes =
               parse_value<Rational>(buf + data + tiff_header_start + 8, alignIntel);
-            this->GeoLocation.LonComponents.seconds = 
+            this->GeoLocation.LonComponents.seconds =
               parse_value<Rational>(buf + data + tiff_header_start + 16, alignIntel);
-            this->GeoLocation.Longitude = 
+            this->GeoLocation.Longitude =
               this->GeoLocation.LonComponents.degrees +
               this->GeoLocation.LonComponents.minutes / 60 +
               this->GeoLocation.LonComponents.seconds / 3600;
@@ -822,10 +831,11 @@ int easyexif::EXIFInfo::parseFromEXIFSegment(const unsigned char *buf, unsigned 
         case 6:
           // GPS altitude reference
           if (format == 5) {
-            this->GeoLocation.Altitude = 
+            this->GeoLocation.Altitude =
               parse_value<Rational>(buf + data + tiff_header_start, alignIntel);
-            if (1 == this->GeoLocation.AltitudeRef)
+            if (1 == this->GeoLocation.AltitudeRef) {
               this->GeoLocation.Altitude = -this->GeoLocation.Altitude;
+            }
           }
           break;
       }
@@ -844,13 +854,13 @@ void easyexif::EXIFInfo::clear() {
   Software          = "";
   DateTime          = "";
   DateTimeOriginal  = "";
-  DateTimeDigitized = ""; 
+  DateTimeDigitized = "";
   SubSecTimeOriginal= "";
   Copyright         = "";
 
   // Shorts / unsigned / double
   ByteAlign         = 0;
-  Orientation       = 0; 
+  Orientation       = 0;
 
   BitsPerSample     = 0;
   ExposureTime      = 0;
@@ -874,11 +884,11 @@ void easyexif::EXIFInfo::clear() {
   GeoLocation.LatComponents.degrees   = 0;
   GeoLocation.LatComponents.minutes   = 0;
   GeoLocation.LatComponents.seconds   = 0;
-  GeoLocation.LatComponents.direction = 0;
+  GeoLocation.LatComponents.direction = '?';
   GeoLocation.LonComponents.degrees   = 0;
   GeoLocation.LonComponents.minutes   = 0;
   GeoLocation.LonComponents.seconds   = 0;
-  GeoLocation.LonComponents.direction = 0;
+  GeoLocation.LonComponents.direction = '?';
 
   // LensInfo
   LensInfo.FocalLengthMax = 0;
