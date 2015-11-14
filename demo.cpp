@@ -47,7 +47,8 @@ int main(int argc, char *argv[]) {
   printf("Original date/time   : %s\n", result.DateTimeOriginal.c_str());
   printf("Digitize date/time   : %s\n", result.DateTimeDigitized.c_str());
   printf("Subsecond time       : %s\n", result.SubSecTimeOriginal.c_str());
-  printf("Exposure time        : 1/%d s\n", (unsigned) (1.0/result.ExposureTime));
+  printf("Exposure time        : 1/%d s\n",
+         (unsigned)(1.0 / result.ExposureTime));
   printf("F-stop               : f/%.1f\n", result.FNumber);
   printf("ISO speed            : %d\n", result.ISOSpeedRatings);
   printf("Subject distance     : %f m\n", result.SubjectDistance);
@@ -57,17 +58,15 @@ int main(int argc, char *argv[]) {
   printf("Lens focal length    : %f mm\n", result.FocalLength);
   printf("35mm focal length    : %u mm\n", result.FocalLengthIn35mm);
   printf("GPS Latitude         : %f deg (%f deg, %f min, %f sec %c)\n",
-          result.GeoLocation.Latitude,
-          result.GeoLocation.LatComponents.degrees,
-          result.GeoLocation.LatComponents.minutes,
-          result.GeoLocation.LatComponents.seconds,
-          result.GeoLocation.LatComponents.direction);
+         result.GeoLocation.Latitude, result.GeoLocation.LatComponents.degrees,
+         result.GeoLocation.LatComponents.minutes,
+         result.GeoLocation.LatComponents.seconds,
+         result.GeoLocation.LatComponents.direction);
   printf("GPS Longitude        : %f deg (%f deg, %f min, %f sec %c)\n",
-          result.GeoLocation.Longitude,
-          result.GeoLocation.LonComponents.degrees,
-          result.GeoLocation.LonComponents.minutes,
-          result.GeoLocation.LonComponents.seconds,
-          result.GeoLocation.LonComponents.direction);
+         result.GeoLocation.Longitude, result.GeoLocation.LonComponents.degrees,
+         result.GeoLocation.LonComponents.minutes,
+         result.GeoLocation.LonComponents.seconds,
+         result.GeoLocation.LonComponents.direction);
   printf("GPS Altitude         : %f m\n", result.GeoLocation.Altitude);
   printf("Lens min focal length: %f mm\n", result.LensInfo.FocalLengthMin);
   printf("Lens max focal length: %f mm\n", result.LensInfo.FocalLengthMax);
