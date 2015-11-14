@@ -3,7 +3,7 @@ easyexif
 
 A tiny ISO-compliant C++ EXIF parsing library.
 
-EasyEXIF is a tiny, lightweight C++ library that parses basic information out of EXIF files. It uses only the std::string library and is otherwise pure C++. You pass it the the binary contents of an entire JPEG file, and it parses out a few of the most important EXIF fields for you. 
+EasyEXIF is a tiny, lightweight C++ library that parses basic information out of EXIF files. It uses only the std::string library and is otherwise pure C++. You pass it the the binary contents of an entire JPEG file, and it parses out a few of the most important EXIF fields for you.
 
 Why use this library? __Include one .h file, compile one .cc file, and that's it.__
 
@@ -28,6 +28,7 @@ Reasonable pull requests are gladly accepted.
 
 The following people have committed patches to EasyExif.
 
+  * Tomas Volf
   * Seth Fowler
   * Val Malykh
   * Carlos Apablaza Brito
@@ -41,11 +42,11 @@ The following people have committed patches to EasyExif.
 
 
 ```C++
-  #include "exif.h" 
+  #include "exif.h"
 
   EXIFInfo result;
   result.parseFrom(JPEGFileBuffer, BufferSize);
-  
+
   printf("Camera make       : %s\n", result.Make.c_str());
   printf("Camera model      : %s\n", result.Model.c_str());
   printf("Software          : %s\n", result.Software.c_str());
