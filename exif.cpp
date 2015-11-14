@@ -414,12 +414,27 @@ IFEntry parseIFEntry(const unsigned char *buf, const unsigned offs,
 // Locates the EXIF segment and parses it using parseFromEXIFSegment
 //
 int easyexif::EXIFInfo::parseFrom(const unsigned char *buf, unsigned len) {
-  // Sanity check: all JPEG files start with 0xFFD8 and end with 0xFFD9
-  // This check also ensures that the user has supplied a correct value for len.
-  if (!buf || len < 4) return PARSE_EXIF_ERROR_NO_EXIF;
+  // Sanity check: all JPEG files start with 0xFFD8.
+  if (!buf || len < 4) return PARSE_EXIF_ERROR_NO_JPEG;
   if (buf[0] != 0xFF || buf[1] != 0xD8) return PARSE_EXIF_ERROR_NO_JPEG;
-  if (buf[len - 2] != 0xFF || buf[len - 1] != 0xD9)
-    return PARSE_EXIF_ERROR_NO_JPEG;
+
+  // Sanity check: some cameras pad the JPEG image with null bytes at the end.
+  // Normally, we should able to find the JPEG end marker 0xFFD9 at the end
+  // of the image, but not always. As long as there are null/0xFF bytes at the
+  // end of the image buffer, keep decrementing len until an 0xFFD9 is found,
+  // or some other bytes are. If the first non-zero/0xFF bytes from the end are
+  // not 0xFFD9, then we can be reasonably sure that the buffer is not a JPEG.
+  while (len > 2) {
+    if (buf[len - 1] == 0 || buf[len - 1] == 0xFF) {
+      len--;
+    } else {
+      if (buf[len - 1] != 0xD9 || buf[len - 2] != 0xFF) {
+        return PARSE_EXIF_ERROR_NO_JPEG;
+      } else {
+        break;
+      }
+    }
+  }
   clear();
 
   // Scan for EXIF header (bytes 0xFF 0xE1) and do a sanity check by
