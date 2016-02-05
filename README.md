@@ -11,6 +11,8 @@ Sometimes you just need to quickly extract basic information from a JPEG file's 
 
 The only two files you need for your project are `exif.cpp` and `exif.h`. There are no dependencies on any build system or external libraries.
 
+Update: EasyExif is probably used in Blackberry's BBM, judging from their third-party [licensing page](http://us.blackberry.com/legal/thirdpartysoftware/bbmthirdparty/x-platform-bbm.html)!
+
 ### Features:
 
   1. Supports common Exif fields including GPS, ISO speed, etc.
