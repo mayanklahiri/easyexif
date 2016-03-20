@@ -7,30 +7,9 @@
   -- http://www.media.mit.edu/pia/Research/deepview/exif.html
   -- http://www.exif.org/Exif2-2.PDF
 
-  Copyright (c) 2010-2015 Mayank Lahiri
+  Copyright (c) 2010-2016 Mayank Lahiri
   mlahiri@gmail.com
   All rights reserved.
-
-  VERSION HISTORY:
-  ================
-
-  2.2: Release December 2014
-       --
-
-  2.1: Released July 2013
-       -- fixed a bug where JPEGs without an EXIF SubIFD would not be parsed
-       -- fixed a bug in parsing GPS coordinate seconds
-       -- fixed makefile bug
-       -- added two pathological test images from Matt Galloway
-          http://www.galloway.me.uk/2012/01/uiimageorientation-exif-orientation-sample-images/
-       -- split main parsing routine for easier integration into Firefox
-
-  2.0: Released February 2013
-       -- complete rewrite
-       -- no new/delete
-       -- added GPS support
-
-  1.0: Released 2010
 
   Redistribution and use in source and binary forms, with or without
   modification, are permitted provided that the following conditions are met:

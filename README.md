@@ -11,7 +11,12 @@ Sometimes you just need to quickly extract basic information from a JPEG file's 
 
 The only two files you need for your project are `exif.cpp` and `exif.h`. There are no dependencies on any build system or external libraries.
 
-Update: EasyExif is probably used in Blackberry's BBM, judging from their third-party [licensing page](http://us.blackberry.com/legal/thirdpartysoftware/bbmthirdparty/x-platform-bbm.html)!
+Who uses this library?
+
+  * [Blackberry's BBM messenger](http://us.blackberry.com/legal/thirdpartysoftware/bbmthirdparty/x-platform-bbm.html).
+  * [Altova Software](http://www.altova.com/legal_3rdparty.html).
+  * [Subsurface](http://trac.hohndel.org/browser/subsurface/qt-ui/exif.h?rev=a3d82bf9b1bf7a25e20e75aceeafe80cbc4f78f3).
+  * [Loom SDK](https://github.com/LoomSDK/LoomSDK/blob/master/loom/vendor/jheadexif/easyexif.h)
 
 ### Features:
 
