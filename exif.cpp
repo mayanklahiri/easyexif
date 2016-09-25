@@ -463,7 +463,8 @@ int easyexif::EXIFInfo::parseFrom(const unsigned char *buf, unsigned len) {
 }
 
 int easyexif::EXIFInfo::parseFrom(const string &data) {
-  return parseFrom((const unsigned char *)data.data(), data.length());
+  return parseFrom(
+      reinterpret_cast<const unsigned char *>(data.data()), data.length());
 }
 
 //
@@ -530,7 +531,7 @@ int easyexif::EXIFInfo::parseFromEXIFSegment(const unsigned char *buf,
     switch (result.tag()) {
       case 0x102:
         // Bits per sample
-        if (result.format() == 3)
+        if (result.format() == 3 && result.val_short().size())
           this->BitsPerSample = result.val_short().front();
         break;
 
@@ -551,7 +552,7 @@ int easyexif::EXIFInfo::parseFromEXIFSegment(const unsigned char *buf,
 
       case 0x112:
         // Orientation of image
-        if (result.format() == 3)
+        if (result.format() == 3 && result.val_short().size())
           this->Orientation = result.val_short().front();
         break;
 
@@ -597,19 +598,19 @@ int easyexif::EXIFInfo::parseFromEXIFSegment(const unsigned char *buf,
       switch (result.tag()) {
         case 0x829a:
           // Exposure time in seconds
-          if (result.format() == 5)
+          if (result.format() == 5 && result.val_rational().size())
             this->ExposureTime = result.val_rational().front();
           break;
 
         case 0x829d:
           // FNumber
-          if (result.format() == 5)
+          if (result.format() == 5 && result.val_rational().size())
             this->FNumber = result.val_rational().front();
           break;
 
         case 0x8827:
           // ISO Speed Rating
-          if (result.format() == 3)
+          if (result.format() == 3 && result.val_short().size())
             this->ISOSpeedRatings = result.val_short().front();
           break;
 
@@ -627,19 +628,19 @@ int easyexif::EXIFInfo::parseFromEXIFSegment(const unsigned char *buf,
 
         case 0x9201:
           // Shutter speed value
-          if (result.format() == 5)
+          if (result.format() == 5 && result.val_rational().size())
             this->ShutterSpeedValue = result.val_rational().front();
           break;
 
         case 0x9204:
           // Exposure bias value
-          if (result.format() == 5)
+          if (result.format() == 5 && result.val_rational().size())
             this->ExposureBiasValue = result.val_rational().front();
           break;
 
         case 0x9206:
           // Subject distance
-          if (result.format() == 5)
+          if (result.format() == 5 && result.val_rational().size())
             this->SubjectDistance = result.val_rational().front();
           break;
 
@@ -650,13 +651,13 @@ int easyexif::EXIFInfo::parseFromEXIFSegment(const unsigned char *buf,
 
         case 0x920a:
           // Focal length
-          if (result.format() == 5)
+          if (result.format() == 5 && result.val_rational().size())
             this->FocalLength = result.val_rational().front();
           break;
 
         case 0x9207:
           // Metering mode
-          if (result.format() == 3)
+          if (result.format() == 3 && result.val_short().size())
             this->MeteringMode = result.val_short().front();
           break;
 
@@ -668,17 +669,17 @@ int easyexif::EXIFInfo::parseFromEXIFSegment(const unsigned char *buf,
 
         case 0xa002:
           // EXIF Image width
-          if (result.format() == 4)
+          if (result.format() == 4 && result.val_long().size())
             this->ImageWidth = result.val_long().front();
-          if (result.format() == 3)
+          if (result.format() == 3 && result.val_short().size())
             this->ImageWidth = result.val_short().front();
           break;
 
         case 0xa003:
           // EXIF Image height
-          if (result.format() == 4)
+          if (result.format() == 4 && result.val_long().size())
             this->ImageHeight = result.val_long().front();
-          if (result.format() == 3)
+          if (result.format() == 3 && result.val_short().size())
             this->ImageHeight = result.val_short().front();
           break;
 
@@ -698,17 +699,22 @@ int easyexif::EXIFInfo::parseFromEXIFSegment(const unsigned char *buf,
 
         case 0xa405:
           // Focal length in 35mm film
-          if (result.format() == 3)
+          if (result.format() == 3 && result.val_short().size())
             this->FocalLengthIn35mm = result.val_short().front();
           break;
 
         case 0xa432:
           // Focal length and FStop.
           if (result.format() == 5) {
-            this->LensInfo.FocalLengthMin = result.val_rational()[0];
-            this->LensInfo.FocalLengthMax = result.val_rational()[1];
-            this->LensInfo.FStopMin = result.val_rational()[2];
-            this->LensInfo.FStopMax = result.val_rational()[3];
+            int sz = result.val_rational().size();
+            if (sz)
+              this->LensInfo.FocalLengthMin = result.val_rational()[0];
+            if (sz > 1)
+              this->LensInfo.FocalLengthMax = result.val_rational()[1];
+            if (sz > 2)
+              this->LensInfo.FStopMin = result.val_rational()[2];
+            if (sz > 3)
+              this->LensInfo.FStopMax = result.val_rational()[3];
           }
           break;
 
