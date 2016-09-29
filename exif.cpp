@@ -464,7 +464,7 @@ int easyexif::EXIFInfo::parseFrom(const unsigned char *buf, unsigned len) {
 
 int easyexif::EXIFInfo::parseFrom(const string &data) {
   return parseFrom(
-      reinterpret_cast<const unsigned char *>(data.data()), data.length());
+      reinterpret_cast<const unsigned char *>(data.data()), static_cast<unsigned>(data.length()));
 }
 
 //
@@ -706,7 +706,7 @@ int easyexif::EXIFInfo::parseFromEXIFSegment(const unsigned char *buf,
         case 0xa432:
           // Focal length and FStop.
           if (result.format() == 5) {
-            int sz = result.val_rational().size();
+            int sz = static_cast<unsigned>(result.val_rational().size());
             if (sz)
               this->LensInfo.FocalLengthMin = result.val_rational()[0];
             if (sz > 1)
