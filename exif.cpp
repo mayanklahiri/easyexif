@@ -403,9 +403,9 @@ IFEntry parseIFEntry(const unsigned char *buf, const unsigned offs,
                      const bool alignIntel, const unsigned base,
                      const unsigned len) {
   if (alignIntel) {
-    return std::move(parseIFEntry_temp<true>(buf, offs, base, len));
+    return parseIFEntry_temp<true>(buf, offs, base, len);
   } else {
-    return std::move(parseIFEntry_temp<false>(buf, offs, base, len));
+    return parseIFEntry_temp<false>(buf, offs, base, len);
   }
 }
 }
