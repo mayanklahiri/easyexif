@@ -646,7 +646,8 @@ int easyexif::EXIFInfo::parseFromEXIFSegment(const unsigned char *buf,
 
         case 0x9209:
           // Flash used
-          if (result.format() == 3) this->Flash = result.data() ? 1 : 0;
+          if (result.format() == 3 && result.val_short().size())
+            this->Flash = (result.val_short().front() & (1 << 0)) >> 0;
           break;
 
         case 0x920a:
