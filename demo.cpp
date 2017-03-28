@@ -54,6 +54,8 @@ int main(int argc, char *argv[]) {
   printf("Subject distance     : %f m\n", result.SubjectDistance);
   printf("Exposure bias        : %f EV\n", result.ExposureBiasValue);
   printf("Flash used?          : %d\n", result.Flash);
+  printf("Flash returned light : %d\n", result.FlashReturnedLight);
+  printf("Flash mode           : %d\n", result.FlashMode);
   printf("Metering mode        : %d\n", result.MeteringMode);
   printf("Lens focal length    : %f mm\n", result.FocalLength);
   printf("35mm focal length    : %u mm\n", result.FocalLengthIn35mm);

@@ -646,8 +646,13 @@ int easyexif::EXIFInfo::parseFromEXIFSegment(const unsigned char *buf,
 
         case 0x9209:
           // Flash used
-          if (result.format() == 3 && result.val_short().size())
-            this->Flash = result.val_short().front() & 1;
+          if (result.format() == 3 && result.val_short().size()) {
+            uint16_t data = result.val_short().front();
+            
+            this->Flash = data & 1;
+            this->FlashReturnedLight = (data & 6) >> 1;
+            this->FlashMode = (data & 24) >> 3;
+          }
           break;
 
         case 0x920a:
@@ -868,6 +873,8 @@ void easyexif::EXIFInfo::clear() {
   FocalLength = 0;
   FocalLengthIn35mm = 0;
   Flash = 0;
+  FlashReturnedLight = 0;
+  FlashMode = 0;
   MeteringMode = 0;
   ImageWidth = 0;
   ImageHeight = 0;
