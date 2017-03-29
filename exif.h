@@ -88,6 +88,16 @@ class EXIFInfo {
   double FocalLength;               // Focal length of lens in millimeters
   unsigned short FocalLengthIn35mm; // Focal length in 35mm film
   char Flash;                       // 0 = no flash, 1 = flash used
+  unsigned short FlashReturnedLight;// Flash returned light status
+                                    // 0: No strobe return detection function
+                                    // 1: Reserved
+                                    // 2: Strobe return light not detected
+                                    // 3: Strobe return light detected
+  unsigned short FlashMode;         // Flash mode
+                                    // 0: Unknown
+                                    // 1: Compulsory flash firing
+                                    // 2: Compulsory flash suppression
+                                    // 3: Automatic mode
   unsigned short MeteringMode;      // Metering mode
                                     // 1: average
                                     // 2: center weighted average

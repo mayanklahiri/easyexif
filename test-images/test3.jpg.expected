@@ -16,7 +16,9 @@ F-stop               : f/2.4
 ISO speed            : 500
 Subject distance     : 0.000000 m
 Exposure bias        : 0.000000 EV
-Flash used?          : 1
+Flash used?          : 0
+Flash returned light : 0
+Flash mode           : 2
 Metering mode        : 5
 Lens focal length    : 4.280000 mm
 35mm focal length    : 35 mm
