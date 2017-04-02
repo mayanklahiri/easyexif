@@ -81,6 +81,16 @@ class EXIFInfo {
   std::string Copyright;            // File copyright information
   double ExposureTime;              // Exposure time in seconds
   double FNumber;                   // F/stop
+  unsigned short ExposureProgram;   // Exposure program
+                                    // 0: Not defined
+                                    // 1: Manual
+                                    // 2: Normal program
+                                    // 3: Aperture priority
+                                    // 4: Shutter priority
+                                    // 5: Creative program
+                                    // 6: Action program
+                                    // 7: Portrait mode
+                                    // 8: Landscape mode
   unsigned short ISOSpeedRatings;   // ISO speed
   double ShutterSpeedValue;         // Shutter speed (reciprocal of exposure time)
   double ExposureBiasValue;         // Exposure bias value in EV

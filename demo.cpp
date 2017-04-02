@@ -50,6 +50,7 @@ int main(int argc, char *argv[]) {
   printf("Exposure time        : 1/%d s\n",
          (unsigned)(1.0 / result.ExposureTime));
   printf("F-stop               : f/%.1f\n", result.FNumber);
+  printf("Exposure program     : %d\n", result.ExposureProgram);
   printf("ISO speed            : %d\n", result.ISOSpeedRatings);
   printf("Subject distance     : %f m\n", result.SubjectDistance);
   printf("Exposure bias        : %f EV\n", result.ExposureBiasValue);
