@@ -608,6 +608,12 @@ int easyexif::EXIFInfo::parseFromEXIFSegment(const unsigned char *buf,
             this->FNumber = result.val_rational().front();
           break;
 
+      case 0x8822:
+        // Exposure Program
+        if (result.format() == 3 && result.val_short().size())
+          this->ExposureProgram = result.val_short().front();
+        break;
+
         case 0x8827:
           // ISO Speed Rating
           if (result.format() == 3 && result.val_short().size())
@@ -866,6 +872,7 @@ void easyexif::EXIFInfo::clear() {
   BitsPerSample = 0;
   ExposureTime = 0;
   FNumber = 0;
+  ExposureProgram = 0;
   ISOSpeedRatings = 0;
   ShutterSpeedValue = 0;
   ExposureBiasValue = 0;
