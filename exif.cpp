@@ -706,6 +706,13 @@ int easyexif::EXIFInfo::parseFromEXIFSegment(const unsigned char *buf,
           }
           break;
 
+        case 0xa210:
+            // EXIF Focal plane resolution unit
+            if (result.format() == 3 && result.val_short().size()) {
+                this->LensInfo.FocalPlaneResolutionUnit = result.val_short().front();
+            }
+            break;
+
         case 0xa405:
           // Focal length in 35mm film
           if (result.format() == 3 && result.val_short().size())
@@ -905,6 +912,7 @@ void easyexif::EXIFInfo::clear() {
   LensInfo.FStopMin = 0;
   LensInfo.FocalPlaneYResolution = 0;
   LensInfo.FocalPlaneXResolution = 0;
+  LensInfo.FocalPlaneResolutionUnit = 0;
   LensInfo.Make = "";
   LensInfo.Model = "";
 }
