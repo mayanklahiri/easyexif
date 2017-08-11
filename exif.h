@@ -136,6 +136,12 @@ class EXIFInfo {
     double FocalLengthMax;          // Max focal length (mm)
     double FocalPlaneXResolution;   // Focal plane X-resolution
     double FocalPlaneYResolution;   // Focal plane Y-resolution
+    unsigned short FocalPlaneResolutionUnit; // Focal plane resolution unit
+                                             // 1: No absolute unit of measurement.
+                                             // 2: Inch.
+                                             // 3: Centimeter.
+                                             // 4: Millimeter.
+                                             // 5: Micrometer.
     std::string Make;               // Lens manufacturer
     std::string Model;              // Lens model
   } LensInfo;
