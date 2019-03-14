@@ -681,7 +681,13 @@ int easyexif::EXIFInfo::parseFromEXIFSegment(const unsigned char *buf,
           if (result.format() == 2)
             this->SubSecTimeOriginal = result.val_string();
           break;
-
+        case 0xa001:
+          // Color Space info
+          if (result.format() == 3 && result.val_short().size()) {
+              uint16_t data = result.val_short().front();
+              this->ColorSpace = data;
+          }
+          break;
         case 0xa002:
           // EXIF Image width
           if (result.format() == 4 && result.val_long().size())
@@ -754,6 +760,11 @@ int easyexif::EXIFInfo::parseFromEXIFSegment(const unsigned char *buf,
           if (result.format() == 2) {
             this->LensInfo.Model = result.val_string();
           }
+          break;
+      default:
+#ifdef DEBUG_COUT
+          std::cout << "Unknown tag: " << result.tag() << std::endl;
+#endif
           break;
       }
       offs += 12;
@@ -916,6 +927,7 @@ void easyexif::EXIFInfo::clear() {
   FlashReturnedLight = 0;
   FlashMode = 0;
   MeteringMode = 0;
+  ColorSpace = 0;
   ImageWidth = 0;
   ImageHeight = 0;
 

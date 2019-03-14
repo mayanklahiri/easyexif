@@ -118,6 +118,7 @@ class EXIFInfo {
                                     // 3: spot
                                     // 4: multi-spot
                                     // 5: multi-segment
+  unsigned ColorSpace;              // Color Spaced reported in EXIF data
   unsigned ImageWidth;              // Image width reported in EXIF data
   unsigned ImageHeight;             // Image height reported in EXIF data
   struct Geolocation_t {            // GPS information embedded in file
