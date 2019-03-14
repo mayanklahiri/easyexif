@@ -35,6 +35,9 @@
 #define __EXIF_H
 
 #include <string>
+#ifdef DEBUG_COUT
+  #include <iostream>
+#endif
 
 namespace easyexif {
 
@@ -62,6 +65,7 @@ class EXIFInfo {
 
   // Data fields filled out by parseFrom()
   char ByteAlign;                   // 0 = Motorola byte alignment, 1 = Intel
+  std::string InteropIndex;         // InteropIndex. Used to detect sRGB vs AdobeRGB
   std::string ImageDescription;     // Image description
   std::string Make;                 // Camera manufacturer's name
   std::string Model;                // Camera model

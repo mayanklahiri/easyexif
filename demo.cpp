@@ -34,6 +34,7 @@ int main(int argc, char *argv[]) {
   }
 
   // Dump EXIF information
+  printf("InteropIndex         : %s\n", result.InteropIndex.c_str());
   printf("Camera make          : %s\n", result.Make.c_str());
   printf("Camera model         : %s\n", result.Model.c_str());
   printf("Software             : %s\n", result.Software.c_str());

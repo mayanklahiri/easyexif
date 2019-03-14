@@ -521,6 +521,7 @@ int easyexif::EXIFInfo::parseFromEXIFSegment(const unsigned char *buf,
   offs += 2;
   unsigned exif_sub_ifd_offset = len;
   unsigned gps_sub_ifd_offset = len;
+  unsigned interop_ifd_offset = len;
   while (--num_entries >= 0) {
     IFEntry result =
         parseIFEntry(buf, offs, alignIntel, tiff_header_start, len);
@@ -576,6 +577,11 @@ int easyexif::EXIFInfo::parseFromEXIFSegment(const unsigned char *buf,
       case 0x8769:
         // EXIF SubIFD offset
         exif_sub_ifd_offset = tiff_header_start + result.data();
+        break;
+      default:
+#ifdef DEBUG_COUT
+        std::cout << "Unknown tag: " << result.tag() << std::endl;
+#endif
         break;
     }
   }
@@ -691,7 +697,9 @@ int easyexif::EXIFInfo::parseFromEXIFSegment(const unsigned char *buf,
           if (result.format() == 3 && result.val_short().size())
             this->ImageHeight = result.val_short().front();
           break;
-
+        case 0xa005:
+          interop_ifd_offset = tiff_header_start + result.data();
+          break;
         case 0xa20e:
           // EXIF Focal plane X-resolution
           if (result.format() == 5) {
@@ -746,6 +754,26 @@ int easyexif::EXIFInfo::parseFromEXIFSegment(const unsigned char *buf,
           if (result.format() == 2) {
             this->LensInfo.Model = result.val_string();
           }
+          break;
+      }
+      offs += 12;
+    }
+  }
+
+  // Jump to the Interop SubIFD if it exists and parse all the information
+  // there. Note that it's possible that the Interop SubIFD doesn't exist.
+  if (interop_ifd_offset + 4 <= len) {
+    offs = interop_ifd_offset;
+    int num_entries = parse_value<uint16_t>(buf + offs, alignIntel);
+    if (offs + 6 + 12 * num_entries > len) return PARSE_EXIF_ERROR_CORRUPT;
+    offs += 2;
+    while (--num_entries >= 0) {
+      IFEntry result =
+              parseIFEntry(buf, offs, alignIntel, tiff_header_start, len);
+      switch(result.tag()) {
+        case 0x01:
+          // InteropIndex
+          if(result.format() == 2) this->InteropIndex = result.val_string();
           break;
       }
       offs += 12;
@@ -859,6 +887,7 @@ int easyexif::EXIFInfo::parseFromEXIFSegment(const unsigned char *buf,
 
 void easyexif::EXIFInfo::clear() {
   // Strings
+  InteropIndex = "";
   ImageDescription = "";
   Make = "";
   Model = "";
