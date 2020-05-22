@@ -35,6 +35,9 @@
 #define __EXIF_H
 
 #include <string>
+#ifdef DEBUG_COUT
+  #include <iostream>
+#endif
 
 namespace easyexif {
 
@@ -62,6 +65,7 @@ class EXIFInfo {
 
   // Data fields filled out by parseFrom()
   char ByteAlign;                   // 0 = Motorola byte alignment, 1 = Intel
+  std::string InteropIndex;         // InteropIndex. Used to detect sRGB vs AdobeRGB
   std::string ImageDescription;     // Image description
   std::string Make;                 // Camera manufacturer's name
   std::string Model;                // Camera model
@@ -114,6 +118,7 @@ class EXIFInfo {
                                     // 3: spot
                                     // 4: multi-spot
                                     // 5: multi-segment
+  unsigned ColorSpace;              // Color Spaced reported in EXIF data
   unsigned ImageWidth;              // Image width reported in EXIF data
   unsigned ImageHeight;             // Image height reported in EXIF data
   struct Geolocation_t {            // GPS information embedded in file

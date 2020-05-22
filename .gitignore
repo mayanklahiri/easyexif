@@ -27,3 +27,9 @@ demo
 *.exe
 *.out
 *.app
+
+# Idea
+.idea/**
+
+# build dirs
+cmake-build-*/**
