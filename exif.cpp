@@ -528,7 +528,7 @@ int easyexif::EXIFInfo::parseFromEXIFSegment(const unsigned char *buf,
     switch (result.tag()) {
       case 0x102:
         // Bits per sample
-        if (result.format() == 3 && result.val_short().size())
+        if (result.format() == 3 && !result.val_short().empty())
           this->BitsPerSample = result.val_short().front();
         break;
 
@@ -549,7 +549,7 @@ int easyexif::EXIFInfo::parseFromEXIFSegment(const unsigned char *buf,
 
       case 0x112:
         // Orientation of image
-        if (result.format() == 3 && result.val_short().size())
+        if (result.format() == 3 && !result.val_short().empty())
           this->Orientation = result.val_short().front();
         break;
 
@@ -595,25 +595,25 @@ int easyexif::EXIFInfo::parseFromEXIFSegment(const unsigned char *buf,
       switch (result.tag()) {
         case 0x829a:
           // Exposure time in seconds
-          if (result.format() == 5 && result.val_rational().size())
+          if (result.format() == 5 && !result.val_rational().empty())
             this->ExposureTime = result.val_rational().front();
           break;
 
         case 0x829d:
           // FNumber
-          if (result.format() == 5 && result.val_rational().size())
+          if (result.format() == 5 && !result.val_rational().empty())
             this->FNumber = result.val_rational().front();
           break;
 
       case 0x8822:
         // Exposure Program
-        if (result.format() == 3 && result.val_short().size())
+        if (result.format() == 3 && !result.val_short().empty())
           this->ExposureProgram = result.val_short().front();
         break;
 
         case 0x8827:
           // ISO Speed Rating
-          if (result.format() == 3 && result.val_short().size())
+          if (result.format() == 3 && !result.val_short().empty())
             this->ISOSpeedRatings = result.val_short().front();
           break;
 
@@ -631,27 +631,27 @@ int easyexif::EXIFInfo::parseFromEXIFSegment(const unsigned char *buf,
 
         case 0x9201:
           // Shutter speed value
-          if (result.format() == 5 && result.val_rational().size())
+          if (result.format() == 5 && !result.val_rational().empty())
             this->ShutterSpeedValue = result.val_rational().front();
           break;
 
         case 0x9204:
           // Exposure bias value
-          if (result.format() == 5 && result.val_rational().size())
+          if (result.format() == 5 && !result.val_rational().empty())
             this->ExposureBiasValue = result.val_rational().front();
           break;
 
         case 0x9206:
           // Subject distance
-          if (result.format() == 5 && result.val_rational().size())
+          if (result.format() == 5 && !result.val_rational().empty())
             this->SubjectDistance = result.val_rational().front();
           break;
 
         case 0x9209:
           // Flash used
-          if (result.format() == 3 && result.val_short().size()) {
+          if (result.format() == 3 && !result.val_short().empty()) {
             uint16_t data = result.val_short().front();
-            
+
             this->Flash = data & 1;
             this->FlashReturnedLight = (data & 6) >> 1;
             this->FlashMode = (data & 24) >> 3;
@@ -660,13 +660,13 @@ int easyexif::EXIFInfo::parseFromEXIFSegment(const unsigned char *buf,
 
         case 0x920a:
           // Focal length
-          if (result.format() == 5 && result.val_rational().size())
+          if (result.format() == 5 && !result.val_rational().empty())
             this->FocalLength = result.val_rational().front();
           break;
 
         case 0x9207:
           // Metering mode
-          if (result.format() == 3 && result.val_short().size())
+          if (result.format() == 3 && !result.val_short().empty())
             this->MeteringMode = result.val_short().front();
           break;
 
@@ -678,17 +678,17 @@ int easyexif::EXIFInfo::parseFromEXIFSegment(const unsigned char *buf,
 
         case 0xa002:
           // EXIF Image width
-          if (result.format() == 4 && result.val_long().size())
+          if (result.format() == 4 && !result.val_long().empty())
             this->ImageWidth = result.val_long().front();
-          if (result.format() == 3 && result.val_short().size())
+          if (result.format() == 3 && !result.val_short().empty())
             this->ImageWidth = result.val_short().front();
           break;
 
         case 0xa003:
           // EXIF Image height
-          if (result.format() == 4 && result.val_long().size())
+          if (result.format() == 4 && !result.val_long().empty())
             this->ImageHeight = result.val_long().front();
-          if (result.format() == 3 && result.val_short().size())
+          if (result.format() == 3 && !result.val_short().empty())
             this->ImageHeight = result.val_short().front();
           break;
 
@@ -708,14 +708,14 @@ int easyexif::EXIFInfo::parseFromEXIFSegment(const unsigned char *buf,
 
         case 0xa210:
             // EXIF Focal plane resolution unit
-            if (result.format() == 3 && result.val_short().size()) {
+            if (result.format() == 3 && !result.val_short().empty()) {
                 this->LensInfo.FocalPlaneResolutionUnit = result.val_short().front();
             }
             break;
 
         case 0xa405:
           // Focal length in 35mm film
-          if (result.format() == 3 && result.val_short().size())
+          if (result.format() == 3 && !result.val_short().empty())
             this->FocalLengthIn35mm = result.val_short().front();
           break;
 
